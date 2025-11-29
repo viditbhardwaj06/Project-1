@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Notes Storage Web</title>
+    <style>
+        body {
+            background: #35262619;
+        }
+
+        header {
+            background: #6c65f5;
+            color: rgba(27, 28, 23, 0.9);
+            text-align: center;
+            font-size: 40px;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+            padding: 40px;
+        }
+
+        .box {
+            flex: 1;
+            padding: 20px;
+            background: rgb(218, 243, 238);
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        button {
+            margin-top: 10px;
+            padding: 10px;
+            background: #0b5ed7;
+            color: white;
+            border: none;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0848a5;
+        }
+
+        .note-item {
+            background: #f7f7f7;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #0b5ed7;
+        }
+
+        .note-title {
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .delete-btn {
+            background: red;
+            padding: 5px 12px;
+            color: white;
+            float: right;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .file-link {
+            margin-top: 8px;
+            display: block;
+            color: #0b5ed7;
+        }
+    </style>
+</head>
+<body>
+
+<header>📘 Notes Storage</header>
+
+<div class="container">
+
+    <!-- LEFT SIDE: Add New Note -->
+    <div class="box">
+        <h2>Add New Note</h2>
+
+        <input id="noteTitle" type="text" placeholder="Enter note title...">
+        <textarea id="newNote" placeholder="Write your note..."></textarea>
+
+        <h3>Upload File (pdf / ppt / image)</h3>
+        <input id="fileUpload" type="file">
+
+        <button onclick="saveNote()">Save Note</button>
+    </div>
+
+    <!-- RIGHT SIDE: Saved Notes -->
+    <div class="box">
+        <h2>Saved Notes</h2>
+        <div id="savedNotes"></div>
+    </div>
+</div>
+
+<script>
+    // Load notes from localStorage
+    let notes = JSON.parse(localStorage.getItem("allNotes")) || [];
+    displayNotes();
+
+    function saveNote() {
+        let title = document.getElementById("noteTitle").value.trim();
+        let text = document.getElementById("newNote").value.trim();
+        let fileInput = document.getElementById("fileUpload");
+        let fileData = null;
+
+        if (title === "" && text === "" && fileInput.files.length === 0) {
+            alert("Please add a note or upload a file!");
+            return;
+        }
+
+        // Convert file to Base64
+        if (fileInput.files.length > 0) {
+            let file = fileInput.files[0];
+            let reader = new FileReader();
+
+            reader.onload = function () {
+                fileData = {
+                    name: file.name,
+                    type: file.type,
+                    data: reader.result
+                };
+
+                saveFinal(title, text, fileData);
+            };
+
+            reader.readAsDataURL(file);
+        } else {
+            saveFinal(title, text, null);
+        }
+    }
+
+    function saveFinal(title, text, file) {
+        let noteObject = {
+            title: title,
+            content: text,
+            file: file
+        };
+
+        notes.push(noteObject);
+        localStorage.setItem("allNotes", JSON.stringify(notes));
+
+        document.getElementById("noteTitle").value = "";
+        document.getElementById("newNote").value = "";
+        document.getElementById("fileUpload").value = "";
+
+        displayNotes();
+        alert("Note Saved!");
+    }
+
+    function deleteNote(index) {
+        notes.splice(index, 1);
+        localStorage.setItem("allNotes", JSON.stringify(notes));
+        displayNotes();
+    }
+
+    function displayNotes() {
+        let container = document.getElementById("savedNotes");
+        container.innerHTML = "";
+
+        notes.forEach((note, index) => {
+            let fileLink = "";
+
+            if (note.file) {
+                fileLink = `<a class="file-link" href="${note.file.data}" download="${note.file.name}">
+                                📎 Download: ${note.file.name}
+                            </a>`;
+            }
+
+            container.innerHTML += `
+                <div class="note-item">
+                    <span class="delete-btn" onclick="deleteNote(${index})">Delete</span>
+                    <div class="note-title">${note.title || "Untitled Note"}</div>
+                    <p>${note.content}</p>
+                    ${fileLink}
+                </div>
+            `;
+        });
+    }
+</script>
+
+</body>
+</html>
